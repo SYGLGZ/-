@@ -1,0 +1,181 @@
+<!-- templates/activity_list.html -->
+{% extends 'base.html' %}
+{% load math_filters %}
+
+{% block content %}
+<!-- Hero 区域 - 告示栏样式 -->
+<div class="bg-gradient-to-r from-[#004ea2] to-[#0066cc] rounded-3xl shadow-xl mb-8 p-8 relative overflow-hidden">
+    <!-- 背景装饰 -->
+    <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full blur-3xl"></div>
+    
+    <div class="relative">
+        <!-- 标题栏 -->
+        <div class="d-flex align-items-center gap-3 mb-6">
+            <div class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl d-flex align-items-center justify-center">
+                <i class="bi bi-calendar-event text-white text-2xl"></i>
+            </div>
+            <div>
+                <span class="text-white/80 text-sm">哈尔滨理工大学</span>
+                <h1 class="text-3xl md:text-4xl font-bold text-white">校园活动管理中心</h1>
+            </div>
+        </div>
+        
+        <!-- 内容区域 -->
+        <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-6 max-w-3xl">
+            <p class="text-white/90 text-lg leading-relaxed">
+                在这里，你可以报名参与各类学术讲座、体育竞赛及社团活动。<br>
+                发现精彩，参与精彩！
+            </p>
+        </div>
+        
+        <!-- 按钮区域 -->
+        <div class="d-flex flex-wrap gap-4">
+            {% if user.is_authenticated %}
+                <a href="{% url 'activities:activity_list' %}" class="d-inline-flex align-items-center gap-2 px-6 py-3 bg-white text-[#004ea2] font-semibold rounded-xl hover:bg-gray-50 transition-all duration-300 shadow-lg">
+                    <i class="bi bi-eye"></i> 查看全部活动
+                </a>
+            {% else %}
+                <a href="{% url 'activities:activity_list' %}" class="d-inline-flex align-items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-xl hover:bg-white/30 transition-all duration-300">
+                    <i class="bi bi-eye"></i> 浏览活动
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 统计卡片 - 并列显示 -->
+<div class="card rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
+    <h3 class="text-lg font-semibold text-gray-800 mb-6 d-flex align-items-center gap-2">
+        <i class="bi bi-bar-chart text-[#004ea2]"></i> 数据统计
+    </h3>
+    <div class="row g-4">
+        <!-- 近期活动 -->
+        <div class="col-md-4">
+            <div class="d-flex align-items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl">
+                <div class="w-14 h-14 bg-blue-500 rounded-xl d-flex align-items-center justify-center flex-shrink-0">
+                    <i class="bi bi-calendar-event text-white text-2xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-blue-600 font-medium">近期活动</p>
+                    <p class="text-3xl font-bold text-blue-700">{{ activities|length }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 报名人数 -->
+        <div class="col-md-4">
+            <div class="d-flex align-items-center gap-4 p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl">
+                <div class="w-14 h-14 bg-green-500 rounded-xl d-flex align-items-center justify-center flex-shrink-0">
+                    <i class="bi bi-people-fill text-white text-2xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-green-600 font-medium">报名人数</p>
+                    <p class="text-3xl font-bold text-green-700">0</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 热门活动 -->
+        <div class="col-md-4">
+            <div class="d-flex align-items-center gap-4 p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl">
+                <div class="w-14 h-14 bg-purple-500 rounded-xl d-flex align-items-center justify-center flex-shrink-0">
+                    <i class="bi bi-star text-white text-2xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-purple-600 font-medium">热门活动</p>
+                    <p class="text-3xl font-bold text-purple-700">0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 活动列表标题 -->
+<div class="d-flex justify-content-between align-items-center mb-6">
+    <div class="d-flex align-items-center gap-3">
+        <div class="w-1 h-8 bg-[#004ea2] rounded-full"></div>
+        <h3 class="text-xl font-bold text-gray-800">最新活动</h3>
+    </div>
+    {% if user.is_authenticated %}
+        {% if user.profile.role == 'teacher' or user.profile.role == 'developer' %}
+            <a href="{% url 'activities:activity_create' %}" class="d-inline-flex align-items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#004ea2] to-[#0066cc] text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300">
+                <i class="bi bi-plus-circle"></i> 创建活动
+            </a>
+        {% endif %}
+    {% endif %}
+</div>
+
+<!-- 活动卡片网格 -->
+<div class="row g-6">
+    {% for activity in activities %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
+            
+            <!-- 图片区域 -->
+            <div class="relative h-48 overflow-hidden">
+                {% if activity.image %}
+                    <img src="{{ activity.image.url }}" class="w-full h-full object-cover" alt="{{ activity.title }}">
+                {% else %}
+                    <div class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 d-flex align-items-center justify-center">
+                        <i class="bi bi-image text-gray-400" style="font-size: 4rem;"></i>
+                    </div>
+                {% endif %}
+                <!-- 状态标签 -->
+                <div class="absolute top-3 left-3">
+                    {% if activity.status == 'published' %}
+                        <span class="px-3 py-1 bg-green-500 text-white text-xs font-medium rounded-full">即将开始</span>
+                    {% elif activity.status == 'ongoing' %}
+                        <span class="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded-full">进行中</span>
+                    {% elif activity.status == 'ended' %}
+                        <span class="px-3 py-1 bg-gray-500 text-white text-xs font-medium rounded-full">已结束</span>
+                    {% else %}
+                        <span class="px-3 py-1 bg-yellow-500 text-white text-xs font-medium rounded-full">草稿</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="p-5">
+                <h5 class="text-lg font-semibold text-gray-800 mb-3">{{ activity.title }}</h5>
+                
+                <div class="space-y-2 text-sm text-gray-500 mb-4">
+                    <p class="d-flex align-items-center gap-2">
+                        <i class="bi bi-geo-alt-fill text-gray-400"></i> {{ activity.location }}
+                    </p>
+                    <p class="d-flex align-items-center gap-2">
+                        <i class="bi bi-clock-fill text-gray-400"></i> {{ activity.date|date:"Y-m-d H:i" }}
+                    </p>
+                </div>
+                
+                <!-- 人数进度 -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between text-sm mb-2">
+                        <span class="text-gray-500"><i class="bi bi-people-fill"></i> 报名情况</span>
+                        <span class="font-medium text-gray-700">{{ activity.get_registered_count }}/{{ activity.capacity }}</span>
+                    </div>
+                    <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-[#004ea2] to-[#0088ff] rounded-full transition-all duration-500" 
+                             style="width: {{ activity.get_registered_count|div:activity.capacity|mul:100 }}%"></div>
+                    </div>
+                </div>
+
+                <a href="{% url 'activities:activity_detail' activity.pk %}" class="d-inline-flex align-items-center justify-content-center w-full py-3 bg-gray-50 text-gray-700 font-medium rounded-xl hover:bg-[#004ea2] hover:text-white transition-all duration-300">
+                    <span>查看详情</span>
+                    <i class="bi bi-arrow-right ml-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card rounded-2xl p-12 text-center shadow-sm border border-gray-100">
+            <div class="w-20 h-20 bg-gray-100 rounded-full d-flex align-items-center justify-center mx-auto mb-4">
+                <i class="bi bi-calendar-x text-gray-400 text-4xl"></i>
+            </div>
+            <h4 class="text-lg font-semibold text-gray-700 mb-2">目前暂无活动</h4>
+            <p class="text-gray-500">敬请期待更多精彩活动！</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

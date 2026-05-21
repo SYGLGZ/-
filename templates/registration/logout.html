@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="card shadow-sm">
+        <div class="card-body p-5">
+            <i class="bi bi-box-arrow-right text-primary" style="font-size: 4rem;"></i>
+            <h2 class="card-title mt-3">您已成功退出</h2>
+            <p class="card-text text-muted">感谢访问哈尔滨理工大学活动管理中心。</p>
+            <p>页面即将跳转回首页...</p>
+            
+            <!-- 如果浏览器不支持JS，提供手动链接 -->
+            <a href="{% url 'activities:home' %}" class="btn btn-outline-primary mt-2">
+                点击此处返回首页
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 自动跳转脚本 -->
+<script type="text/javascript">
+    setTimeout(function() {
+        window.location.href = "{% url 'activities:home' %}";
+    }, 2000); // 2000毫秒 = 2秒后跳转
+</script>
+{% endblock %}

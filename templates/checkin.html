@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* 确保签到码输入框可见 */
+    #checkin_code {
+        display: block !important;
+        width: 100% !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 1.5rem !important;
+        font-weight: bold !important;
+        color: #212529 !important;
+        background-color: #fff !important;
+        border: 2px solid #ced4da !important;
+        border-radius: 0.5rem !important;
+        letter-spacing: 0.3em !important;
+        box-sizing: border-box !important;
+        text-transform: uppercase !important;
+    }
+    
+    #checkin_code:focus {
+        border-color: #004ea2 !important;
+        outline: 0 !important;
+        box-shadow: 0 0 0 0.25rem rgba(0, 78, 162, 0.25) !important;
+    }
+</style>
+<div class="container mt-8">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg rounded-2xl overflow-hidden">
+                <!-- 卡片头部 -->
+                <div class="bg-gradient-to-r from-[#004ea2] to-[#0066cc] text-white py-6 px-6">
+                    <h2 class="text-2xl font-bold text-center">
+                        <i class="bi bi-qr-code-scan me-2"></i>活动签到
+                    </h2>
+                    <p class="text-center text-white/80 mt-2">{{ activity.title }}</p>
+                </div>
+                
+                <!-- 卡片内容 -->
+                <div class="p-6">
+                    <!-- 活动信息 -->
+                    <div class="bg-gray-50 rounded-xl p-4 mb-6">
+                        <div class="flex items-center gap-3 mb-3">
+                            <i class="bi bi-calendar-date text-[#004ea2]"></i>
+                            <span>{{ activity.date|date:"Y年m月d日 H:i" }}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <i class="bi bi-map-marker text-[#004ea2]"></i>
+                            <span>{{ activity.location }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 签到码输入表单 -->
+                    <form method="POST" class="space-y-4">
+                        {% csrf_token %}
+                        
+                        <div>
+                            <label for="checkin_code" class="block text-gray-700 font-medium mb-2">
+                                请输入签到码
+                            </label>
+                            <div class="relative">
+                                <input 
+                                    type="text" 
+                                    id="checkin_code" 
+                                    name="checkin_code"
+                                    class="form-control text-center text-2xl font-bold tracking-widest uppercase"
+                                    placeholder="请输入6位签到码"
+                                    maxlength="6"
+                                    minlength="6"
+                                    pattern="[A-Za-z0-9]{6}"
+                                    required
+                                    autocomplete="off"
+                                    style="letter-spacing: 0.3em;"
+                                    autofocus
+                                >
+                            </div>
+                            <p class="text-sm text-gray-500 mt-2 text-center">
+                                请向活动老师获取签到码
+                            </p>
+                        </div>
+                        
+                        <button 
+                            type="submit"
+                            class="btn btn-primary w-full py-3 text-lg font-semibold rounded-xl transition-all hover:shadow-lg"
+                            style="background: linear-gradient(135deg, #004ea2 0%, #0066cc 100%);"
+                        >
+                            <i class="bi bi-check-circle me-2"></i>确认签到
+                        </button>
+                    </form>
+                    
+                    <!-- 返回按钮 -->
+                    <div class="mt-4 text-center">
+                        <a href="{% url 'activities:activity_detail' pk=activity.pk %}" class="text-gray-500 hover:text-[#004ea2] transition-colors">
+                            <i class="bi bi-arrow-left me-1"></i>返回活动详情
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-8">
+    <!-- 页面标题 -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">
+            <i class="bi bi-list-check me-2 text-[#004ea2]"></i>活动签到记录
+        </h1>
+        <p class="text-gray-500 mt-1">{{ activity.title }}</p>
+    </div>
+    
+    <!-- 统计卡片 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">报名总人数</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ total_count }}</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
+                    <i class="bi bi-users text-[#004ea2] text-xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">已签到人数</p>
+                    <p class="text-2xl font-bold text-green-600">{{ checkin_count }}</p>
+                </div>
+                <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
+                    <i class="bi bi-check-circle text-green-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">签到率</p>
+                    <p class="text-2xl font-bold text-purple-600">{{ checkin_rate|floatformat:1 }}%</p>
+                </div>
+                <div class="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center">
+                    <i class="bi bi-percent text-purple-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 签到码展示 -->
+    <div class="bg-gradient-to-r from-[#004ea2] to-[#0066cc] rounded-xl p-6 mb-6 text-white">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h3 class="text-lg font-semibold">签到码</h3>
+                <p class="text-white/70">请将此签到码告知学生</p>
+            </div>
+            <div class="text-center">
+                <p class="text-4xl font-bold tracking-wider" id="checkinCodeDisplay">{{ activity.checkin_code|default:"未生成" }}</p>
+                <p class="text-sm text-white/70 mt-1">有效期：活动开始前30分钟至结束后2小时</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="copyCheckinCode()" class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors" title="复制签到码">
+                    <i class="bi bi-clipboard"></i> 复制
+                </button>
+                <form action="{% url 'activities:refresh_checkin_code' activity.pk %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="px-4 py-2 bg-yellow-500/80 hover:bg-yellow-500 rounded-lg transition-colors" title="刷新签到码">
+                        <i class="bi bi-arrow-clockwise"></i> 刷新
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    function copyCheckinCode() {
+        const code = document.getElementById('checkinCodeDisplay').textContent.trim();
+        if (code && code !== '未生成') {
+            navigator.clipboard.writeText(code).then(() => {
+                alert('签到码已复制到剪贴板！');
+            });
+        }
+    }
+    </script>
+    
+    <!-- 签到列表 -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-800">签到详情</h3>
+        </div>
+        
+        <div class="divide-y divide-gray-100">
+            {% for registration in registrations %}
+            <div class="p-4 hover:bg-gray-50 transition-colors">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                            <i class="bi bi-person text-gray-400"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-800">{{ registration.user.profile.name }}</p>
+                            <p class="text-sm text-gray-500">{{ registration.user.profile.student_id }} | {{ registration.user.profile.college }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-4">
+                        {% if registration.is_checked_in %}
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                                <i class="bi bi-check-circle me-1"></i>已签到
+                            </span>
+                            <span class="text-sm text-gray-500">
+                                {{ registration.checked_in_at|date:"m-d H:i" }}
+                            </span>
+                        </div>
+                        <form action="{% url 'activities:cancel_checkin' activity.pk registration.pk %}" method="post" class="d-inline" onsubmit="return confirm('确定要取消该学生的签到状态吗？');">
+                            {% csrf_token %}
+                            <button type="submit" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="取消签到">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm font-medium">
+                            <i class="bi bi-clock me-1"></i>未签到
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-8 text-center text-gray-500">
+                <i class="bi bi-inbox text-4xl mb-2"></i>
+                <p>暂无报名记录</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- 返回按钮 -->
+    <div class="mt-6 flex justify-between items-center flex-wrap gap-4">
+        <a href="{% url 'activities:activity_detail' pk=activity.pk %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-2"></i>返回活动详情
+        </a>
+        <a href="{% url 'activities:export_checkin' activity.pk %}" class="btn btn-success">
+            <i class="bi bi-download me-2"></i>导出签到名单
+        </a>
+    </div>
+</div>
+{% endblock %}

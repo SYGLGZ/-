@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+{% load math_filters %}
+{% load static %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- 活动卡片 -->
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+            
+            <!-- 图片区域 -->
+            <div class="relative h-72 overflow-hidden">
+                {% if activity.image %}
+                    <img src="{{ activity.image.url }}" class="w-full h-full object-cover" alt="{{ activity.title }}">
+                {% else %}
+                    <div class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                        <i class="bi bi-image text-gray-400" style="font-size: 6rem;"></i>
+                    </div>
+                {% endif %}
+                
+                <!-- 状态标签 -->
+                <div class="absolute top-4 left-4">
+                    {% if activity.status == 'published' %}
+                        <span class="px-4 py-1.5 bg-green-500 text-white text-sm font-semibold rounded-full shadow-lg">即将开始</span>
+                    {% elif activity.status == 'ongoing' %}
+                        <span class="px-4 py-1.5 bg-blue-500 text-white text-sm font-semibold rounded-full shadow-lg">进行中</span>
+                    {% elif activity.status == 'ended' %}
+                        <span class="px-4 py-1.5 bg-gray-500 text-white text-sm font-semibold rounded-full shadow-lg">已结束</span>
+                    {% else %}
+                        <span class="px-4 py-1.5 bg-yellow-500 text-white text-sm font-semibold rounded-full shadow-lg">草稿</span>
+                    {% endif %}
+                </div>
+                
+                <!-- 创建者信息 -->
+                <div class="absolute bottom-4 right-4">
+                    <span class="px-3 py-1 bg-black/50 backdrop-blur-sm text-white text-xs rounded-full">
+                        创建者: {{ activity.creator.username }}
+                    </span>
+                </div>
+            </div>
+            
+            <!-- 内容区域 -->
+            <div class="p-8">
+                <!-- 标题 -->
+                <h1 class="text-3xl font-bold text-gray-800 mb-6">{{ activity.title }}</h1>
+                
+                <!-- 活动信息 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="flex items-center gap-3 p-4 bg-blue-50 rounded-xl">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="bi bi-calendar-event text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">活动时间</p>
+                            <p class="font-semibold text-gray-800">{{ activity.date|date:"Y年m月d日 H:i" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 p-4 bg-green-50 rounded-xl">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="bi bi-geo-alt text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">活动地点</p>
+                            <p class="font-semibold text-gray-800">{{ activity.location }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 人数统计 -->
+                <div class="mb-6 p-5 bg-gradient-to-r from-[#004ea2]/5 to-[#0088ff]/5 rounded-2xl border border-[#004ea2]/10">
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center gap-2">
+                            <i class="bi bi-people text-[#004ea2]"></i>
+                            <span class="font-semibold text-gray-700">报名情况</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-2xl font-bold text-[#004ea2]">{{ registered_count }}</span>
+                            <span class="text-gray-500"> / {{ activity.capacity }}人</span>
+                        </div>
+                    </div>
+                    <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-[#004ea2] to-[#0088ff] rounded-full transition-all duration-500" 
+                             style="width: {{ registered_count|div:activity.capacity|mul:100 }}%"></div>
+                    </div>
+                    <div class="flex justify-between mt-2 text-sm">
+                        <span class="text-gray-500">剩余名额: {{ activity.capacity|sub:registered_count }}</span>
+                        <span class="text-gray-500">{{ registered_count|div:activity.capacity|mul:100|floatformat:0 }}% 已满</span>
+                    </div>
+                </div>
+                
+                <!-- 活动描述 -->
+                <div class="mb-6">
+                    <h4 class="flex items-center gap-2 text-lg font-semibold text-gray-800 mb-4">
+                        <span class="w-1 h-5 bg-[#004ea2] rounded-full"></span>
+                        活动介绍
+                    </h4>
+                    <div class="p-5 bg-gray-50 rounded-xl">
+                        <p class="text-gray-600 leading-relaxed">{{ activity.description }}</p>
+                    </div>
+                </div>
+                
+                <!-- 报名区域 -->
+                <div class="p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border border-gray-200">
+                    <h4 class="flex items-center gap-2 text-lg font-semibold text-gray-800 mb-4">
+                        <span class="w-1 h-5 bg-[#004ea2] rounded-full"></span>
+                        报名状态
+                    </h4>
+                    
+                    {% if user.is_authenticated %}
+                        {% if is_registered %}
+                            <!-- 已报名状态 -->
+                            <div class="flex items-center gap-3 mb-4 p-4 bg-green-100 rounded-xl">
+                                <div class="w-12 h-12 bg-green-200 rounded-full flex items-center justify-center">
+                                    <i class="bi bi-check-circle text-green-600 text-2xl"></i>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-green-700">报名成功</p>
+                                    <p class="text-sm text-green-600">如有疑问请联系活动组织者</p>
+                                </div>
+                            </div>
+                            <form action="{% url 'activities:cancel' activity.pk %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="w-full py-3 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition-colors" 
+                                        onclick="return confirm('确定要取消报名吗？')">
+                                    <i class="bi bi-x-circle"></i> 取消报名
+                                </button>
+                            </form>
+                        {% else %}
+                            <!-- 未报名状态 -->
+                            {% if is_past %}
+                                <div class="flex items-center gap-3 p-4 bg-gray-100 rounded-xl">
+                                    <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                                        <i class="bi bi-clock-history text-gray-500 text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-600">活动已结束</p>
+                                        <p class="text-sm text-gray-500">该活动已结束，无法报名</p>
+                                    </div>
+                                </div>
+                            {% elif is_full %}
+                                <div class="flex items-center gap-3 p-4 bg-orange-100 rounded-xl">
+                                    <div class="w-12 h-12 bg-orange-200 rounded-full flex items-center justify-center">
+                                        <i class="bi bi-exclamation-triangle text-orange-600 text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-orange-700">名额已满</p>
+                                        <p class="text-sm text-orange-600">该活动报名人数已达上限</p>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <form action="{% url 'activities:register' activity.pk %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="w-full py-4 bg-gradient-to-r from-[#004ea2] to-[#0088ff] text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300">
+                                        <i class="bi bi-check-circle"></i> 立即报名
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center p-6">
+                            <i class="bi bi-lock text-gray-400 text-4xl mb-3"></i>
+                            <p class="text-gray-600 mb-4">您需要登录后才能报名活动</p>
+                            <a href="{% url 'activities:login' %}?next={{ request.path }}" class="inline-flex items-center gap-2 px-6 py-3 bg-[#004ea2] text-white font-semibold rounded-xl hover:bg-[#003d80] transition-colors">
+                                <i class="bi bi-box-arrow-in-right"></i> 立即登录
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- 签到功能区域 -->
+                {% if user.is_authenticated %}
+                    {% if user.profile.is_teacher and can_edit %}
+                        <!-- 老师端：签到管理 -->
+                        <div class="mt-6 p-6 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-100">
+                            <h4 class="flex items-center gap-2 text-lg font-semibold text-gray-800 mb-4">
+                                <span class="w-1 h-5 bg-purple-500 rounded-full"></span>
+                                签到管理
+                            </h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {% if activity.checkin_code %}
+                                    <!-- 已生成签到码 -->
+                                    <div class="bg-white rounded-xl p-4 border border-gray-100 relative">
+                                        <p class="text-sm text-gray-500 mb-2">签到码</p>
+                                        <p class="text-2xl font-bold text-[#004ea2] tracking-wider">{{ activity.checkin_code }}</p>
+                                        <p class="text-xs text-gray-400 mt-1">有效期：活动开始前30分钟至结束后2小时</p>
+                                        <form action="{% url 'activities:refresh_checkin_code' activity.pk %}" method="post" class="absolute top-2 right-2">
+                                            {% csrf_token %}
+                                            <button type="submit" class="p-1.5 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors" title="刷新签到码">
+                                                <i class="bi bi-arrow-clockwise"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% else %}
+                                    <!-- 生成签到码按钮 -->
+                                    <div>
+                                        <form action="{% url 'activities:generate_checkin_code' activity.pk %}" method="post">
+                                            {% csrf_token %}
+                                            <button type="submit" class="w-full py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all">
+                                                <i class="bi bi-qr-code"></i> 生成签到码
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- 查看签到列表 -->
+                                <div>
+                                    <a href="{% url 'activities:checkin_list' activity.pk %}" class="inline-flex items-center justify-center w-full py-3 bg-white text-[#004ea2] font-semibold rounded-xl border border-[#004ea2]/20 hover:bg-[#004ea2]/5 transition-colors">
+                                        <i class="bi bi-list-check"></i> 查看签到记录
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% elif user.profile.is_student and is_registered %}
+                        <!-- 学生端：签到入口 -->
+                        {% if registration %}
+                            <div class="mt-6 p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-100">
+                                <h4 class="flex items-center gap-2 text-lg font-semibold text-gray-800 mb-4">
+                                    <span class="w-1 h-5 bg-green-500 rounded-full"></span>
+                                    签到状态
+                                </h4>
+                                
+                                {% if registration and registration.is_checked_in %}
+                                    <!-- 已签到 -->
+                                    <div class="flex items-center gap-4 p-4 bg-green-100 rounded-xl">
+                                        <div class="w-14 h-14 bg-green-200 rounded-full flex items-center justify-center">
+                                            <i class="bi bi-check-circle text-green-600 text-3xl"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-green-700">已完成签到</p>
+                                            <p class="text-sm text-green-600">签到时间：{{ registration.checked_in_at|date:"Y年m月d日 H:i" }}</p>
+                                        </div>
+                                    </div>
+                                {% elif activity.is_checkin_available %}
+                                    <!-- 可以签到 -->
+                                    <a href="{% url 'activities:checkin' activity.pk %}" class="inline-flex items-center justify-center w-full py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all">
+                                        <i class="bi bi-qr-code-scan"></i> 立即签到
+                                    </a>
+                                    <p class="text-center text-sm text-gray-500 mt-3">请向活动老师获取签到码</p>
+                                {% else %}
+                                    <!-- 签到未开始或已结束 -->
+                                    <div class="flex items-center gap-4 p-4 bg-gray-100 rounded-xl">
+                                        <div class="w-14 h-14 bg-gray-200 rounded-full flex items-center justify-center">
+                                            <i class="bi bi-clock text-gray-500 text-3xl"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-gray-600">签到未开放</p>
+                                            <p class="text-sm text-gray-500">签到时间：活动开始前30分钟至结束后2小时</p>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+                
+                <!-- 操作按钮 -->
+                <div class="mt-6 flex flex-wrap justify-between items-center gap-4">
+                    <a href="{% url 'activities:activity_list' %}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors">
+                        <i class="bi bi-arrow-left"></i> 返回列表
+                    </a>
+                    
+                    <div class="flex gap-3">
+                        {% if user.is_authenticated %}
+                            {% if user.profile.is_teacher and activity.creator == user %}
+                                <!-- 活动老师可以编辑自己创建的活动 -->
+                                <a href="{% url 'activities:activity_edit' activity.pk %}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white font-medium rounded-xl hover:bg-blue-600 transition-colors">
+                                    <i class="bi bi-pencil"></i> 编辑
+                                </a>
+                            {% endif %}
+                            {% if user.profile.is_developer %}
+                                <!-- 开发者可以编辑和删除所有活动 -->
+                                <a href="{% url 'activities:activity_edit' activity.pk %}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white font-medium rounded-xl hover:bg-blue-600 transition-colors">
+                                    <i class="bi bi-pencil"></i> 编辑
+                                </a>
+                                <a href="{% url 'activities:activity_delete' activity.pk %}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-red-500 text-white font-medium rounded-xl hover:bg-red-600 transition-colors">
+                                    <i class="bi bi-trash"></i> 删除
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
