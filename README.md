@@ -2,7 +2,7 @@
 
 基于 Django 的全栈校园活动管理平台，覆盖活动发布、在线报名、动态签到、数据审计与导出的完整业务闭环。项目重点不只是 CRUD，还包含 RBAC、并发报名控制、自动化测试与持续集成。
 
-> 适合作为 Python 后端 / Web 开发实习的作品集项目。参见 [系统设计](docs/architecture.md) 与 [简历和面试表达指南](docs/resume-guide.md)。
+详细设计参见 [系统设计文档](docs/architecture.md)。
 
 ## 技术栈
 
@@ -78,7 +78,7 @@ python manage.py runserver
 ├── requirements.txt       # Python 依赖
 ├── .env.example           # 环境变量模板
 ├── .github/workflows/     # GitHub Actions 持续集成
-├── docs/                  # 架构、截图、简历与面试材料
+├── docs/                  # 架构说明与项目截图
 └── manage.py              # Django 命令行入口
 ```
 
@@ -117,7 +117,6 @@ Registration
 ## 工程文档
 
 - [系统架构与设计决策](docs/architecture.md)
-- [简历描述、30 秒介绍与面试追问](docs/resume-guide.md)
 
 ## 截图
 
