@@ -4,7 +4,7 @@ from .models import Activity, Registration, Profile
 
 # 自定义 Activity 的显示方式
 class ActivityAdmin(admin.ModelAdmin):
-    list_display = ('title', 'date', 'location', 'capacity', 'status', 'created_at')
+    list_display = ('title', 'date', 'location', 'capacity', 'status', 'created_at', 'image_preview')
     list_filter = ('status', 'date')
     search_fields = ('title', 'location')
     list_editable = ('status',)

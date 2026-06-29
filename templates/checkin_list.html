@@ -57,7 +57,7 @@
                 <p class="text-white/70">请将此签到码告知学生</p>
             </div>
             <div class="text-center">
-                <p class="text-4xl font-bold tracking-wider" id="checkinCodeDisplay">{{ activity.checkin_code|default:"未生成" }}</p>
+                <p class="text-4xl font-bold tracking-wider" id="checkinCodeDisplay">{{ activity.checkin_code|default:"未生成"|escape }}</p>
                 <p class="text-sm text-white/70 mt-1">有效期：活动开始前30分钟至结束后2小时</p>
             </div>
             <div class="flex gap-2">

@@ -71,7 +71,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-green-600 font-medium">报名人数</p>
-                    <p class="text-3xl font-bold text-green-700">0</p>
+                    <p class="text-3xl font-bold text-green-700">{{ total_registrations|default:0 }}</p>
                 </div>
             </div>
         </div>
@@ -84,7 +84,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-purple-600 font-medium">热门活动</p>
-                    <p class="text-3xl font-bold text-purple-700">0</p>
+                    <p class="text-3xl font-bold text-purple-700">{{ popular_activity.title|default:"暂无"|truncatechars:6 }}</p>
                 </div>
             </div>
         </div>

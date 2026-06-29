@@ -19,13 +19,12 @@ class LoginForm(AuthenticationForm):
 
 # 3. 完善资料表单
 class ProfileForm(forms.ModelForm):
+    student_id = forms.CharField(label='学号/工号', max_length=20, required=True)
+
     class Meta:
         model = Profile
         fields = ['name', 'student_id', 'college', 'class_name', 'phone']
-        labels = {
-            'student_id': '学号/工号',
-            'class_name': '班级/部门',
-        }
+        labels = {'class_name': '班级/部门'}
 
 # 4. 活动表单
 class ActivityForm(forms.ModelForm):

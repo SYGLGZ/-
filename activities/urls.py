@@ -2,7 +2,7 @@
 
 from django.urls import path
 from . import views
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.views import LogoutView
 
 app_name = 'activities'
 
@@ -23,7 +23,7 @@ urlpatterns = [
 
     # 认证相关路径
     path('signup/', views.signup, name='signup'),
-    path('login/', LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('login/', views.custom_login, name='login'),
     path('logout/', LogoutView.as_view(template_name='registration/logout.html'), name='logout'),
 
     # 用户资料

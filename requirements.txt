@@ -1,0 +1,6 @@
+Django>=6.0,<6.1
+django-simple-captcha>=0.6.0
+dj-database-url>=2.2.0
+Pillow>=10.0.0
+psycopg[binary]>=3.2.0
+python-dotenv>=1.0.0

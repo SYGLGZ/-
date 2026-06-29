@@ -1,15 +1,24 @@
+import csv
+from functools import wraps
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.forms import AuthenticationForm
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
+from django.http import HttpResponse
+from django.http import Http404
+from django.db import models
+from django.db import transaction
+from django.views.decorators.http import require_POST
 from .models import Activity, Registration, Profile
 from .forms import SignUpForm, LoginForm, ProfileForm, ActivityForm
 
 
 def profile_complete_required(view_func):
+    @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         if request.user.is_authenticated:
             try:
@@ -45,6 +54,13 @@ def is_teacher(user):
         return False
 
 
+def is_student(user):
+    try:
+        return user.is_authenticated and user.profile.is_student()
+    except Profile.DoesNotExist:
+        return False
+
+
 def signup(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
@@ -69,14 +85,20 @@ def custom_login(request):
                 login(request, user)
                 messages.info(request, f"欢迎回来，{username}！")
                 
-                if not user.profile.is_completed:
+                try:
+                    if not user.profile.is_completed:
+                        return redirect('activities:edit_profile')
+                except Profile.DoesNotExist:
                     return redirect('activities:edit_profile')
+                next_url = request.GET.get('next') or request.POST.get('next')
+                if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                    return redirect(next_url)
                 return redirect('activities:activity_list')
         else:
             messages.error(request, "用户名或密码错误。")
     
     else:
-        form = AuthenticationForm()
+        form = LoginForm()
 
     return render(request, 'registration/login.html', {'form': form})
 
@@ -99,7 +121,17 @@ def edit_profile(request):
 
 def home(request):
     activities = Activity.objects.filter(status='published').order_by('-date')[:6]
-    return render(request, 'activity_list.html', {'activities': activities})
+    total_registrations = Registration.objects.filter(activity__status='published').count()
+    popular_activity = Activity.objects.filter(status='published').annotate(
+        reg_count=models.Count('registrations')
+    ).order_by('-reg_count').first()
+
+    context = {
+        'activities': activities,
+        'total_registrations': total_registrations,
+        'popular_activity': popular_activity,
+    }
+    return render(request, 'activity_list.html', context)
 
 
 @login_required
@@ -113,6 +145,8 @@ def activity_list(request):
 @profile_complete_required
 def activity_detail(request, pk):
     activity = get_object_or_404(Activity, pk=pk)
+    if activity.status == 'draft' and not activity.can_edit(request.user):
+        raise Http404("活动不存在")
     registration = Registration.objects.filter(user=request.user, activity=activity).first()
     is_registered = registration is not None
     registered_count = activity.get_registered_count()
@@ -138,18 +172,29 @@ def activity_detail(request, pk):
 
 @login_required
 @profile_complete_required
+@require_POST
 def register_for_activity(request, pk):
-    activity = get_object_or_404(Activity, pk=pk)
-    
-    if activity.date < timezone.now():
-        messages.error(request, "该活动已结束，无法报名。")
-        return redirect('activities:activity_detail', pk=pk)
-    
-    if activity.is_full():
-        messages.error(request, "该活动名额已满。")
-        return redirect('activities:activity_detail', pk=pk)
-    
-    registration, created = Registration.objects.get_or_create(user=request.user, activity=activity)
+    # 行级锁在 PostgreSQL 等生产数据库中串行化同一活动的报名，避免并发超额。
+    with transaction.atomic():
+        activity = get_object_or_404(Activity.objects.select_for_update(), pk=pk)
+
+        if not is_student(request.user):
+            messages.error(request, "只有学生账号可以报名活动。")
+            return redirect('activities:activity_detail', pk=pk)
+        if activity.status != 'published' or activity.date < timezone.now():
+            messages.error(request, "该活动当前不可报名。")
+            return redirect('activities:activity_detail', pk=pk)
+
+        registration = Registration.objects.filter(user=request.user, activity=activity).first()
+        if registration:
+            created = False
+        elif activity.is_full():
+            messages.error(request, "该活动名额已满。")
+            return redirect('activities:activity_detail', pk=pk)
+        else:
+            Registration.objects.create(user=request.user, activity=activity)
+            created = True
+
     if created:
         messages.success(request, "报名成功！")
     else:
@@ -159,8 +204,13 @@ def register_for_activity(request, pk):
 
 @login_required
 @profile_complete_required
+@require_POST
 def cancel_registration(request, pk):
     activity = get_object_or_404(Activity, pk=pk)
+    registration = Registration.objects.filter(user=request.user, activity=activity).first()
+    if registration and (registration.is_checked_in or activity.date <= timezone.now()):
+        messages.error(request, "活动已开始或已完成签到，不能取消报名。")
+        return redirect('activities:activity_detail', pk=pk)
     deleted, _ = Registration.objects.filter(user=request.user, activity=activity).delete()
     if deleted > 0:
         messages.success(request, "已取消报名。")
@@ -226,6 +276,7 @@ def activity_delete(request, pk):
 @login_required
 @profile_complete_required
 @user_passes_test(is_teacher)
+@require_POST
 def generate_checkin_code(request, pk):
     """老师生成签到码"""
     activity = get_object_or_404(Activity, pk=pk)
@@ -247,6 +298,7 @@ def generate_checkin_code(request, pk):
 @login_required
 @profile_complete_required
 @user_passes_test(is_teacher)
+@require_POST
 def refresh_checkin_code(request, pk):
     """老师刷新签到码"""
     activity = get_object_or_404(Activity, pk=pk)
@@ -313,6 +365,7 @@ def checkin(request, pk):
 @login_required
 @profile_complete_required
 @user_passes_test(is_teacher)
+@require_POST
 def cancel_checkin(request, pk, registration_pk):
     """老师取消学生签到"""
     activity = get_object_or_404(Activity, pk=pk)
@@ -335,8 +388,6 @@ def cancel_checkin(request, pk, registration_pk):
 @user_passes_test(is_teacher)
 def export_checkin_list(request, pk):
     """导出签到名单为CSV"""
-    import csv
-    from django.http import HttpResponse
     
     activity = get_object_or_404(Activity, pk=pk)
     
